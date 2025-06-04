@@ -1,153 +1,241 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css"/>
-    <title>Movies</title>
-
-    <style>
-        body {
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-        .movie-image {
-            width: 100px;
-            height: 100px;
-        }
-        .card-img-top {
-            width: 100%;
-            height: 15vw;
-            object-fit: cover;
-        }
-        .card {
-            margin-bottom: 20px;
-        }
-        .divider {
-            border-left: 2px solid #dee2e6;
-            height: 100%;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            top: 0;
-            z-index: 1;
-        }
-        .movie-section {
-            padding: 10px;
-            position: relative;
-            z-index: 2;
-        }
-        .section-title {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .border-box {
-            border: 1px solid #dee2e6;
-            padding: 10px;
-            position: relative;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css"/>
+<title>Movie List</title>
+<style>
+body { padding:20px; background-color:#f8f9fa; }
+.card-img-top { width:100%; height:15vw; object-fit:cover; }
+.card { margin-bottom:20px; }
+.movie-section { padding:10px; position:relative; z-index:2; }
+.section-title { text-align:center; margin-bottom:20px; }
+.border-box { border:1px solid #dee2e6; padding:10px; position:relative; }
+</style>
 </head>
 <body>
+<div class="container">
+  <h1 class="mb-4 text-primary">Film/Dizi Arşivi</h1>
 
-    <div class="container">
-        <h1 class="mb-4 text-primary">Film Arşivi</h1>
+  <div id="loginSection" class="mb-4">
+    <div class="row g-2">
+      <div class="col"><input id="username" class="form-control" placeholder="Kullanıcı Adı"></div>
+      <div class="col"><input id="password" type="password" class="form-control" placeholder="Şifre"></div>
+      <div class="col-auto">
+        <button class="btn btn-primary" onclick="login()">Giriş Yap</button>
+        <button class="btn btn-secondary" onclick="signup()">Kayıt Ol</button>
+      </div>
+    </div>
+  </div>
 
-        <div class="mb-3">
-            <label for="movieName" class="form-label">Film Adı:</label>
-            <input type="text" class="form-control" id="movieName">
-        </div>
-        <div class="mb-3">
-            <label for="imageUrl" class="form-label">Film URL:</label>
-            <input type="text" class="form-control" id="imageUrl">
-        </div>
-
-        <button class="btn btn-success mb-4" onclick="addMovie()">Filmi Ekle</button>
-
-        <div class="row position-relative">
-            <div class="col-md-6 movie-section border-box">
-                <h2 class="section-title">İzlenecek Filmler</h2>
-                <div id="movieList" class="row"></div>
-            </div>
-            <div class="col-md-6 movie-section border-box">
-                <h2 class="section-title">İzlenen Filmler</h2>
-                <div id="watchedList" class="row"></div>
-            </div>
-            <div class="divider"></div>
-        </div>
+  <div id="appSection" style="display:none;">
+    <div class="mb-3">
+      <button class="btn btn-danger" onclick="logout()">Çıkış Yap</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="row g-2 mb-4">
+      <div class="col-md-2">
+        <select id="type" class="form-select">
+          <option value="movie">Film</option>
+          <option value="tv">Dizi</option>
+        </select>
+      </div>
+      <div class="col-md-8">
+        <input type="text" class="form-control" id="searchQuery" placeholder="Film/Dizi Ara">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-info w-100" onclick="searchMedia()">Ara</button>
+      </div>
+    </div>
 
-    <script>
-        function addMovie() {
-            var movieName = document.getElementById('movieName').value;
-            var imageUrl = document.getElementById('imageUrl').value;
+    <div id="searchResults" class="row mb-4"></div>
 
-            if (movieName.trim() === '' || imageUrl.trim() === '') {
-                alert('Lütfen film adı ve resim URL\'si girin.');
-                return;
-            }
+    <div class="mb-3">
+      <label for="movieName" class="form-label">Film/Dizi Adı:</label>
+      <input type="text" class="form-control" id="movieName">
+    </div>
+    <div class="mb-3">
+      <label for="imageUrl" class="form-label">Görsel URL:</label>
+      <input type="text" class="form-control" id="imageUrl">
+    </div>
+    <button class="btn btn-success mb-4" onclick="addMovie()">Ekle</button>
 
-            var movieList = document.getElementById('movieList');
-            var card = document.createElement('div');
-            card.className = 'col-md-12';
+    <div class="row position-relative">
+      <div class="col-md-6 movie-section border-box">
+        <h2 class="section-title">İzlenecekler</h2>
+        <div id="movieList" class="row"></div>
+      </div>
+      <div class="col-md-6 movie-section border-box">
+        <h2 class="section-title">İzlenenler</h2>
+        <div id="watchedList" class="row"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-            var cardInner = `
-                <div class="card">
-                    <img src="${imageUrl}" class="card-img-top" alt="${movieName}">
-                    <div class="card-body">
-                        <h5 class="card-title">${movieName}</h5>
-                        <button class="btn btn-success me-2" onclick="watchMovie(this)">İzlendi</button>
-                        <button class="btn btn-danger" onclick="removeMovie(this)">Kaldır</button>
-                    </div>
-                </div>
-            `;
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+var apiKey = 'API_KEY_HERE';
+var currentUser = null;
 
-            card.innerHTML = cardInner;
-            movieList.appendChild(card);
+document.addEventListener('DOMContentLoaded', function(){
+  var stored = localStorage.getItem('currentUser');
+  if(stored){
+    currentUser = stored;
+    showApp();
+  }
+});
 
-            document.getElementById('movieName').value = '';
-            document.getElementById('imageUrl').value = '';
-        }
+function signup(){
+  var u = document.getElementById('username').value.trim();
+  var p = document.getElementById('password').value.trim();
+  if(!u || !p){ alert('Kullanıcı adı ve şifre girin'); return; }
+  var users = JSON.parse(localStorage.getItem('movieAppUsers') || '{}');
+  if(users[u]){ alert('Kullanıcı zaten var'); return; }
+  users[u] = {password:p, toWatch:[], watched:[]};
+  localStorage.setItem('movieAppUsers', JSON.stringify(users));
+  alert('Kayıt başarılı');
+}
 
-        function watchMovie(button) {
-            var card = button.closest('.col-md-12');
-            var cardBody = card.querySelector('.card-body');
-            var movieTitle = cardBody.querySelector('.card-title').textContent;
-            var movieImage = card.querySelector('.card-img-top').src;
+function login(){
+  var u = document.getElementById('username').value.trim();
+  var p = document.getElementById('password').value.trim();
+  if(!u || !p){ alert('Kullanıcı adı ve şifre girin'); return; }
+  var users = JSON.parse(localStorage.getItem('movieAppUsers') || '{}');
+  if(!users[u] || users[u].password !== p){ alert('Hatalı giriş'); return; }
+  currentUser = u;
+  localStorage.setItem('currentUser', currentUser);
+  showApp();
+}
 
-            var emotion = prompt('Filmle alakalı görüşlerinizi yazınız:');
-            if (emotion === null || emotion.trim() === '') {
-                alert('Lütfen bir görüş girin.');
-                return; 
-            }
+function logout(){
+  currentUser = null;
+  localStorage.removeItem('currentUser');
+  document.getElementById('movieList').innerHTML = '';
+  document.getElementById('watchedList').innerHTML = '';
+  document.getElementById('appSection').style.display='none';
+  document.getElementById('loginSection').style.display='block';
+}
 
-            var watchedList = document.getElementById('watchedList');
-            var watchedCard = document.createElement('div');
-            watchedCard.className = 'col-md-12';
+function showApp(){
+  document.getElementById('loginSection').style.display='none';
+  document.getElementById('appSection').style.display='block';
+  loadUserData();
+}
 
-            var watchedCardInner = `
-                <div class="card">
-                    <img src="${movieImage}" class="card-img-top" alt="${movieTitle}">
-                    <div class="card-body">
-                        <h5 class="card-title">${movieTitle}</h5>
-                        <p class="card-text">${emotion}</p>
-                        <span class="text-success">İzlendi</span>
-                    </div>
-                </div>
-            `;
+function loadUserData(){
+  var users = JSON.parse(localStorage.getItem('movieAppUsers') || '{}');
+  var data = users[currentUser];
+  document.getElementById('movieList').innerHTML = '';
+  document.getElementById('watchedList').innerHTML = '';
+  data.toWatch.forEach(function(m){ createMovieCard(m); });
+  data.watched.forEach(function(m){ createWatchedCard(m); });
+}
 
-            watchedCard.innerHTML = watchedCardInner;
-            watchedList.appendChild(watchedCard);
+function createMovieCard(movie){
+  var movieList = document.getElementById('movieList');
+  var card = document.createElement('div');
+  card.className = 'col-md-12';
+  card.dataset.type = movie.type;
+  card.innerHTML = `<div class="card">
+      <img src="${movie.imageUrl}" class="card-img-top" alt="${movie.title}">
+      <div class="card-body">
+        <h5 class="card-title">${movie.title}</h5>
+        <button class="btn btn-success me-2" onclick="watchMovie(this)">İzlendi</button>
+        <button class="btn btn-danger" onclick="removeMovie(this)">Kaldır</button>
+      </div></div>`;
+  movieList.appendChild(card);
+}
 
-            card.remove();
-        }
+function createWatchedCard(movie){
+  var watchedList = document.getElementById('watchedList');
+  var card = document.createElement('div');
+  card.className = 'col-md-12';
+  card.innerHTML = `<div class="card">
+      <img src="${movie.imageUrl}" class="card-img-top" alt="${movie.title}">
+      <div class="card-body">
+        <h5 class="card-title">${movie.title}</h5>
+        <p class="card-text">${movie.comment || ''}</p>
+        <span class="text-success">İzlendi</span>
+      </div></div>`;
+  watchedList.appendChild(card);
+}
 
-        function removeMovie(button) {
-            var card = button.closest('.col-md-12');
-            card.remove();
-        }
-    </script>
+function addMovie(type='movie'){
+  var movieName = document.getElementById('movieName').value;
+  var imageUrl = document.getElementById('imageUrl').value;
+  if(movieName.trim()==='' || imageUrl.trim()===''){ alert('Bilgileri doldurun'); return; }
+  var users = JSON.parse(localStorage.getItem('movieAppUsers') || '{}');
+  var data = users[currentUser];
+  var movie = {title:movieName, imageUrl:imageUrl, type:type};
+  data.toWatch.push(movie);
+  localStorage.setItem('movieAppUsers', JSON.stringify(users));
+  createMovieCard(movie);
+  document.getElementById('movieName').value='';
+  document.getElementById('imageUrl').value='';
+}
+
+function watchMovie(button){
+  var card = button.closest('.col-md-12');
+  var title = card.querySelector('.card-title').textContent;
+  var image = card.querySelector('.card-img-top').src;
+  var type = card.dataset.type;
+  var emotion = prompt('Görüşünüz:');
+  if(emotion===null || emotion.trim()===''){ alert('Lütfen bir görüş girin'); return; }
+  var users = JSON.parse(localStorage.getItem('movieAppUsers') || '{}');
+  var data = users[currentUser];
+  var idx = Array.from(card.parentNode.children).indexOf(card);
+  data.toWatch.splice(idx,1);
+  data.watched.push({title:title, imageUrl:image, type:type, comment:emotion});
+  localStorage.setItem('movieAppUsers', JSON.stringify(users));
+  createWatchedCard({title:title, imageUrl:image, comment:emotion});
+  card.remove();
+}
+
+function removeMovie(button){
+  var card = button.closest('.col-md-12');
+  var idx = Array.from(card.parentNode.children).indexOf(card);
+  var users = JSON.parse(localStorage.getItem('movieAppUsers') || '{}');
+  var data = users[currentUser];
+  data.toWatch.splice(idx,1);
+  localStorage.setItem('movieAppUsers', JSON.stringify(users));
+  card.remove();
+}
+
+function searchMedia(){
+  var type = document.getElementById('type').value;
+  var query = document.getElementById('searchQuery').value;
+  if(query.trim()===''){ alert('Arama kelimesi girin'); return; }
+  fetch(`https://api.themoviedb.org/3/search/${type}?api_key=${apiKey}&query=${encodeURIComponent(query)}`)
+  .then(r=>r.json())
+  .then(d=>{
+    var res = document.getElementById('searchResults');
+    res.innerHTML='';
+    d.results.forEach(function(item){
+      var image = item.poster_path ? 'https://image.tmdb.org/t/p/w500'+item.poster_path : '';
+      var title = type==='movie'?item.title:item.name;
+      var div = document.createElement('div');
+      div.className='col-md-3';
+      div.innerHTML = `<div class="card">
+          <img src="${image}" class="card-img-top" alt="${title}">
+          <div class="card-body">
+            <h5 class="card-title">${title}</h5>
+            <button class="btn btn-success" onclick="addMovieFromSearch('${encodeURIComponent(title)}','${encodeURIComponent(image)}','${type}')">Ekle</button>
+          </div></div>`;
+      res.appendChild(div);
+    });
+  })
+  .catch(()=>alert('Arama başarısız'));
+}
+
+function addMovieFromSearch(titleEnc,imageEnc,type){
+  var title = decodeURIComponent(titleEnc);
+  var image = decodeURIComponent(imageEnc);
+  document.getElementById('movieName').value=title;
+  document.getElementById('imageUrl').value=image;
+  addMovie(type);
+}
+</script>
 </body>
 </html>
